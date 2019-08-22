@@ -1,7 +1,7 @@
 <template>
   <div id="app">
     <img alt="Vue logo" src="./assets/logo.png" />
-    <HelloWorld :userDoc="user" />
+    <HelloWorld :user-doc="readonlyUser" :editable-user-doc="editableUser" />
   </div>
 </template>
 
@@ -16,12 +16,45 @@ import HelloWorld from "./components/HelloWorld.vue";
   }
 })
 export default class App extends Vue {
-  user: Iuser = {
+  readonlyUser: Iuser = {
     name: "test",
     age: 20,
     birthday: { seconds: 0, nanoseconds: 0 },
-    work: { name: "es-katsu", post: "" }
+    work: { name: "es-cats", post: "" }
   };
+
+  defaultValues: any = {
+    birthday: { seconds: 0, nanoseconds: 0 },
+    work: {}
+  };
+
+  handler: ProxyHandler<Iuser> = {
+    get: (target: any, property: string) => {
+      console.log('get', typeof target[property] === 'object' && target[property] !== null, target, property);
+      if (typeof target[property] === 'object' && target[property] !== null) {
+        return new Proxy(target[property], this.handler)
+      } else {
+        if (!target[property]) {
+          target[property] = {};
+        }
+        return target[property];
+      }
+    },
+    set: (target: any, property: string, value: any) => {
+      console.log('set', property in target, target, property, value);
+      target[property] = value;
+      return true;
+    },
+    has(target: any, key: string) {
+      return key in target;
+    }
+  };
+
+  editableUser = new Proxy({}, this.handler);
+  // editableUser = {
+  //   birthday: {},
+  //   work: {}
+  // };
 }
 </script>
 
